@@ -14,7 +14,7 @@ before(async () => {
   const scratch = mkdtempSync(join(tmpdir(), 'of-keys-'));
   process.env.OPENFILM_HOME = join(scratch, 'home');
   process.env.OPENFILM_LIBRARY = join(scratch, 'library');
-  for (const name of ['ELEVENLABS_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'FAL_KEY', 'PEXELS_API_KEY', 'PIXABAY_API_KEY', 'BRAVE_API_KEY', 'TAVILY_API_KEY', 'GROQ_API_KEY']) delete process.env[name];
+  for (const name of ['ELEVENLABS_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'FAL_KEY', 'PEXELS_API_KEY', 'PIXABAY_API_KEY', 'BRAVE_API_KEY', 'TAVILY_API_KEY', 'GROQ_API_KEY', 'AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION']) delete process.env[name];
   studio = await startStudio({ port: 0, openBrowser: (url) => opened.push(url) });
 });
 after(() => studio.close());
@@ -105,6 +105,23 @@ test('a provider\'s own page for its balance opens in the person\'s browser, for
     assert.equal(opened.at(-1), page);
   }
   assert.equal((await api('/api/providers/acme/billing', { method: 'POST' })).status, 404);
+});
+
+test('a provider that checks its pasted key refuses one that cannot work, where it is pasted', async () => {
+  delete process.env.AZURE_SPEECH_REGION;
+  const bare = await api('/api/providers/azure/key', { method: 'PUT', body: { key: 'azure-test-0123456789abcdef' } });
+  assert.equal(bare.status, 400);
+  assert.match((await bare.json()).error, /region/);
+  const placed = await api('/api/providers/azure/key', { method: 'PUT', body: { key: 'eastus:azure-test-0123456789abcdef' } });
+  assert.equal(placed.status, 200);
+  assert.equal((await placed.json()).providers.find((p) => p.id === 'azure').last4, 'cdef');
+  process.env.AZURE_SPEECH_REGION = 'westus2';
+  try {
+    assert.equal((await api('/api/providers/azure/key', { method: 'PUT', body: { key: 'azure-test-0123456789abcdef' } })).status, 200);
+  } finally {
+    delete process.env.AZURE_SPEECH_REGION;
+  }
+  await api('/api/providers/azure/key', { method: 'DELETE' });
 });
 
 test('a key removed: what it made goes to another key that makes it, else to nothing', async () => {
