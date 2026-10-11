@@ -1,5 +1,12 @@
 # openfilm
 
+## 0.1.5
+
+### Patch Changes
+
+- e4679d2: Desktop: your own key can name several models (Settings → Agents, separated by commas), each checked for reading pictures; the chat's menu switches between them. The menu no longer stays on "Loading" for an agent with nothing to choose.
+- e4679d2: Studio: the subtitle panel's language and typeface menus are Studio's own, in its colors, grouped and with the chosen one checked, in place of the browser's list, which was light in a dark Studio and read as if every choice were disabled.
+
 ## 0.1.4
 
 ### Patch Changes
